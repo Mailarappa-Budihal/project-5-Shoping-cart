@@ -157,99 +157,92 @@ const updateUser = async(req, res) => {
         try {
             const userId = req.params.userId
             if (!mongoose.isValidObjectId(userId)) return res.status(400).send({ status: false, message: "You entered a Invalid userId in params" })
-            const checkUserId = await userModel.findOne({ _id: userId })
-            if (!checkUserId) return res.status(404).send({ status: false, message: "user not found" })
-
-            const data = req.body
+            const User = await userModel.findById({ _id: userId })
+            if (!User) return res.status(404).send({ status: false, message: "user not found" })
+            const requestBody = req.body
+            const { fname, lname, phone, email, password, address, profileImage } = requestBody
             let files = req.files;
-            const objectUpdate = {...data, ...files }
-            if (!validator.isValidBody(objectUpdate)) return res.status(400).send({ status: false, message: "Please provide something to update" })
-            if (data.fname || data.fname === "") {
-                data.fname = data.fname.trim()
-                if (!validator.isValid(data.fname)) return res.status(400).send({ status: false, message: "fname is empty" })
-                objectUpdate.fname = data.fname
+            if (!validator.isValidBody(requestBody)) return res.status(400).send({ status: false, message: "Please provide something to update" })
+            if (fname) {
+                if (!validator.isValid(fname)) return res.status(400).send({ status: false, message: "fname is empty" })
+                User["fname"] = fname
             }
-            if (data.lname || data.lname === "") {
-                data.lname = data.lname.trim()
-                if (!validator.isValid(data.lname)) return res.status(400).send({ status: false, message: "lname is empty" })
-                objectUpdate.lname = data.lname
+            if (lname) {
+                if (!validator.isValid(lname)) return res.status(400).send({ status: false, message: "lname is empty" })
+                User["lname"] = lname
             }
-            if (data.email || data.email === "") {
-                data.email = data.email.trim()
-                if (!validator.isValid(data.email)) return res.status(400).send({ status: false, message: "email is empty" })
-                let findEmail = await userModel.findOne({ email: data.email })
+            if (email) {
+                if (!validator.isValid(email)) return res.status(400).send({ status: false, message: "email is empty" })
+                const findEmail = await userModel.findOne({ email: email })
                 if (findEmail) return res.status(409).send({ status: false, message: "email is already exists please enter a new emailId " })
-                if (validator.isValidEmail(data.email) == false) return res.status(400).send({ status: false, message: "You entered a Invalid email" })
-                objectUpdate.email = data.email
+                if (validator.isValidEmail(email) == false) return res.status(400).send({ status: false, message: "You entered a Invalid email" })
+                User["email"] = email
             }
 
-            if (data.profileImage) {
+            if (profileImage) {
                 if (!files || (files && files.length === 0)) return res.status(400).send({ status: false, message: 'Profile image is empty' })
-                const profilePicture = await uploadFile(files[0])
-                objectUpdate.profileImage = profilePicture
+                const profileImage = await uploadFile(files[0])
+                User["profileImage"] = profileImage
             }
 
-            if (data.phone || data.phone === "") {
-                data.phone = data.phone.trim()
-                if (!validator.isValid(data.phone)) return res.status(400).send({ status: false, message: "phone is empty" })
-                let findPhone = await userModel.findOne({ phone: data.phone })
-                if (phoneRex.test(data.phone) == false) return res.status(400).send({ status: false, message: "You entered a Invalid phone number" })
+            if (phone) {
+                if (!validator.isValid(phone)) return res.status(400).send({ status: false, message: "phone is empty" })
+                const findPhone = await userModel.findOne({ phone: phone })
+                if (phoneRex.test(phone) == false) return res.status(400).send({ status: false, message: "You entered a Invalid phone number" })
                 if (findPhone) return res.status(409).send({ status: false, message: "This phone number is already exists" })
-                objectUpdate.phone = data.phone
+                User["phone"] = phone
             }
-            if (data.password || data.password === "") {
-                data.password = data.password.trim()
-                if (!validator.isValid(data.password)) return res.status(400).send({ status: false, message: "password is empty" })
-                if (!validator.isValidPassword(data.password)) return res.status(400).send({ status: false, message: `Password must between 8-5 and contain a Capital,Symbol,Numeric` })
+            if (password) {
+                if (!validator.isValid(password)) return res.status(400).send({ status: false, message: "password is empty" })
+                if (!validator.isValidPassword(password)) return res.status(400).send({ status: false, message: `Password must between 8-5 and contain a Capital,Symbol,Numeric` })
                 const salt = await bcrypt.genSalt(10)
-                const hashedPassword = await bcrypt.hash(data.password, salt)
-                objectUpdate.password = hashedPassword
+                const hashedPassword = await bcrypt.hash(requestBody.password, salt)
+                User["password"] = hashedPassword
             }
+            let address1 = JSON.parse(address)
+            if (address1) {
+                if (Object.keys(address1).length > 0) {
+                    const shippingAddress = address1.shipping
 
-            if (data.address) {
-                address = JSON.parse(data.address)
-                let { shipping, billing } = data.address
-                let findAddres = await userModel.findOne({ _id: userId })
-                objectUpdate.address = findAddres.address
-                if (shipping) {
-                    if (shipping.street || shipping.street === "") {
-                        shipping.street = shipping.street.trim()
-                        if (!validator.isValid(shipping.street)) return res.status(400).send({ status: false, message: "shipping street is empty" })
-                        objectUpdate.address.shipping.street = shipping.street
-                    }
-                    if (shipping.city || shipping.city === "") {
-                        shipping.city = shipping.city.trim()
-                        if (!validator.isValid(shipping.city)) return res.status(400).send({ status: false, message: "shipping city is empty" })
-                        objectUpdate.address.shipping.city = shipping.city
-                    }
-                    if (shipping.pincode || shipping.pincode === "") {
-                        shipping.pincode = shipping.pincode.trim()
-                        if (!validator.isValid(shipping.pincode)) return res.status(400).send({ status: false, message: "shipping pincode is empty" })
-                        if (!/^[1-9][0-9]{5}$/.test(shipping.pincode)) return res.status(400).send({ status: false, message: "Shipping Pincode should in six digit Number" })
-                        objectUpdate.address.shipping.pincode = shipping.pincode
+                    if (shippingAddress) {
+                        if (shippingAddress.street) {
+                            if (!validator.isValid(shippingAddress.street)) return res.status(400).send({ status: false, message: "shipping street is empty" })
+                            User.address.shipping["street"] = shippingAddress.street
+                        }
+                        if (shippingAddress.city) {
+                            if (!validator.isValid(shippingAddress.city)) return res.status(400).send({ status: false, message: "shipping city is empty" })
+                            User.address.shipping["city"] = shippingAddress.city
+                        }
+                        if (shippingAddress.pincode) {
+                            if (!validator.isValid(shippingAddress.pincode)) return res.status(400).send({ status: false, message: "shipping pincode is empty" })
+                            if (!/^[1-9][0-9]{5}$/.test(shippingAddress.pincode)) return res.status(400).send({ status: false, message: "Shipping Pincode should in six digit Number" })
+                            User.address.shipping["pincode"] = shippingAddress.pincode
+                        }
                     }
                 }
-                if (billing) {
-                    if (billing.street || billing.street === "") {
-                        billing.street = billing.street.trim()
-                        if (!validator.isValid(billing.street)) return res.status(400).send({ status: false, message: "billing street is empty" })
-                        objectUpdate.address.billing.street = billing.street
+                const billingAddress = address1.billing
+                if (billingAddress) {
+                    if (billingAddress.street) {
+                        if (!validator.isValid(billingAddress.street)) return res.status(400).send({ status: false, message: "billing street is empty" })
+                        User.address.billing["street"] = billingAddress.street
                     }
-                    if (billing.city || billing.city === "") {
-                        billing.city = billing.city.trim()
-                        if (!validator.isValid(billing.city)) return res.status(400).send({ status: false, message: "billing city is empty" })
-                        objectUpdate.address.billing.city = billing.city
+                    if (billingAddress.city) {
+                        if (!validator.isValid(billingAddress.city)) return res.status(400).send({ status: false, message: "billing city is empty" })
+                        User.address.billing["city"] = billingAddress.city
                     }
-                    if (billing.pincode || billing.pincode === "") {
-                        billing.pincode = billing.pincode.trim()
-                        if (!validator.isValid(billing.pincode)) return res.status(400).send({ status: false, message: "billing pincode is empty" })
-                        if (!/^[1-9][0-9]{5}$/.test(billing.pincode)) return res.status(400).send({ status: false, message: "billing Pincode should in six digit Number" })
-                        objectUpdate.address.billing.pincode = billing.pincode
+                    if (billingAddress.pincode) {
+                        if (!validator.isValid(billingAddress.pincode)) return res.status(400).send({ status: false, message: "billing pincode is empty" })
+                        if (!/^[1-9][0-9]{5}$/.test(billingAddress.pincode)) return res.status(400).send({ status: false, message: "billing Pincode should in six digit Number" })
+                        User.address.billing["pincode"] = billingAddress.pincode
                     }
                 }
             }
-            let updateData = await userModel.findOneAndUpdate({ _id: userId }, { $set: objectUpdate, updatedAt: Date.now() }, { new: true })
-            return res.status(200).send({ status: true, message: "User profile updated", data: updateData })
+            const UpdateUser1 = await User.save()
+            const strUserUpdate = JSON.stringify(UpdateUser1)
+            const ObjectUserUpdate = JSON.parse(strUserUpdate)
+            delete(ObjectUserUpdate.password)
+
+            return res.status(200).send({ status: true, message: "User profile updated", data: ObjectUserUpdate })
 
         } catch (error) {
             return res.status(500).send({ status: false, message: error.message })
