@@ -1,8 +1,7 @@
-//=======================================Importing Module and Packages================================================
+//=======================================Importing Module and Packages=========================================//
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema(
-  {
+const userSchema = new mongoose.Schema({
     fname: { type: String, required: true },
     lname: { type: String, required: true },
     email: { type: String, required: true, unique: true },
@@ -10,18 +9,18 @@ const userSchema = new mongoose.Schema(
     phone: { type: String, required: true, unique: true },
     password: { type: String, required: true, minLen: 8, maxLen: 15 }, // encrypted password
     address: {
-      shipping: {
-        street: { type: String, required: true },
-        city: { type: String, required: true },
-        pincode: { type: Number, required: true },
-      },
-      billing: {
-        street: { type: String, required: true },
-        city: { type: String, required: true },
-        pincode: { type: Number, required: true },
-      },
+        shipping: {
+            street: { type: String, required: true },
+            city: { type: String, required: true },
+            pincode: { type: Number, required: true },
+        },
+        billing: {
+            street: { type: String, required: true },
+            city: { type: String, required: true },
+            pincode: { type: Number, required: true },
+        },
     },
-  }, { timestamps: true });
+}, { timestamps: true });
 
-//====================================Module Export=============================================================
+//====================================Module Export===========================================================//
 module.exports = mongoose.model("User", userSchema);
