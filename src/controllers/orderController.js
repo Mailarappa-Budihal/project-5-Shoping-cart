@@ -63,25 +63,17 @@ const updateOrder = async(req, res) => {
 
             const findUser = await userModel.findById({ _id: userId })
             if (!findUser) return res.status(404).send({ status: false, message: "No such User found" })
-
-            const cartId = req.body.cartId
+            const data = req.body
+            if (!validator.isValidBody(data)) {
+                return res.status(400).send({ status: false, message: "please provide data in the body" })
+            }
+            const { orderId, cartId, status } = data
             if (!cartId)
                 return res.status(400).send({ status: false, message: "cartId is required" })
             if (!mongoose.isValidObjectId(cartId)) return res.status(400).send({ status: false, message: "You entered an invalid cartId" })
             const findCart = await cartModel.findById({ _id: cartId })
             if (!findCart)
                 return res.status(404).send({ status: false, message: "No cart found....." })
-
-            const data = req.body
-            if (!validator.isValidBody(data)) {
-                return res.status(400).send({ status: false, message: "please provide data in the body" })
-            }
-
-            const orderId = req.body.orderId
-
-            if (!validator.isValidBody(data)) {
-                return res.status(400).send({ status: false, message: "please provide data in the body" })
-            }
 
             if (!orderId)
                 return res.status(400).send({ status: false, message: "OrderId is required" })
@@ -93,20 +85,19 @@ const updateOrder = async(req, res) => {
             if (!findOrder)
                 return res.status(404).send({ status: false, message: "No such Order found" })
 
-            const status = req.body.status
             if (!status) {
                 return res.status(400).send({ status: false, message: "Please provide status to update.." })
             } else {
-                const statusEnum = ["pending", "completed", "cancled"]
+                const statusEnum = ["pending", "completed", "canceled"]
                 if (!statusEnum.includes(status))
-                    return res.status(400).send({ status: false, message: "Order status should be only Pending,completed,cancled" })
+                    return res.status(400).send({ status: false, message: "Order status should be only Pending,completed,canceled" })
 
-                if (status == "cancled") {
+                if (status == "canceled") {
                     const checkCancellable = await orderModel.findOne({ _id: orderId, cancellable: true })
                     if (!checkCancellable)
-                        return res.status(400).send({ status: false, message: "This order cannot be cancelled" })
+                        return res.status(400).send({ status: false, message: "This order cannot be canceled" })
 
-                    if (checkCancellable.status == 'cancled')
+                    if (checkCancellable.status == 'canceled')
                         return res.status(400).send({ status: false, message: "This order is already canceled" })
                     checkCancellable.status = status
 
@@ -132,5 +123,5 @@ const updateOrder = async(req, res) => {
             return res.status(500).send({ status: false, message: error.message })
         }
     }
-    //======================================Module Export===========================================================
+    //======================================Module Export======================================================//
 module.exports = { createOrder, updateOrder }

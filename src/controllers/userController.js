@@ -42,7 +42,7 @@ const createUser = async(req, res) => {
             //phone
             if (!validator.isValid(phone)) return res.status(400).send({ status: false, message: 'phone no is required' });
             phone = phone.trim()
-            if (phone.length != 10) return res.status(400).send({ status: false, message: `${phone.length} is not valid phone number length` })
+            if (phone.length != 10) return res.status(400).send({ status: false, message: `${phone} is not valid phone number length` })
             if (!phone.match(phoneRex)) return res.status(400).send({ status: false, message: `Please fill Indian phone number with 1st no only(6,7,8,9)` })
             const isPhoneAlreadyUsed = await userModel.findOne({ phone });
             if (isPhoneAlreadyUsed) return res.status(409).send({ status: false, message: `${phone} phone number is already registered` })
